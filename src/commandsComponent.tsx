@@ -2,7 +2,6 @@
 
 import * as React from "react"
 import {
-  CaretSortIcon,
   ChevronDownIcon,
   DotsHorizontalIcon,
 } from "@radix-ui/react-icons"
@@ -49,144 +48,117 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { axiosInstance } from "./axios"
-import { PlusCircle } from "lucide-react"
+import { CalendarIcon, PlusCircle } from "lucide-react"
 import { Dialog, DialogTrigger } from "./components/ui/dialog"
+import { Client } from "./clientsComponent"
+import { Popover, PopoverContent, PopoverTrigger } from "./components/ui/popover"
+import { cn } from "./lib/utils"
+import { format } from "date-fns"
+import { Calendar } from "./components/ui/calendar"
 
-interface Client {
-    client_id: number;
-    nom: string;
-    mail: string;
-    adress: string;
+interface Command {
+  commandId: number;
+  dateCommande: string; // Assuming you will convert the Date to a string for serialization
+  montant: number;
+  client: Client; // Assuming Command is another interface representing the Command entity
 }
-
-// const data: Client[] = [
-//     {
-//         client_id: 1,
-//         nom: "John Doe",
-//         mail: "john.doe@example.com",
-//         adress: "123 Main St",
-//     },
-//     {
-//         client_id: 2,
-//         nom: "Jane Smith",
-//         mail: "jane.smith@example.com",
-//         adress: "456 Elm St",
-//     },
-//     {
-//         client_id: 3,
-//         nom: "Alice Johnson",
-//         mail: "alice.johnson@example.com",
-//         adress: "789 Oak St",
-//     },
-// ];
-
-// const handleDeleteClient = (idToDelete : number) => {
-//     axiosInstance.delete(`/api/client/.delete/${id}`)
-//     .then(() => fetchClients())
-//     .catch((error) => console.error('Error deleting client:', error));
-// }  
 
 
 
 export function DataTableDemoCommand() {
-    const [data, setData] = React.useState<Client[]>([]);
+  const [data, setData] = React.useState<Command[]>([]);
 
-    const onDeleteClient = (clientId : number) => {
-        axiosInstance.delete(`/api/client/.delete/${clientId}`)
-          .then(() => {
-            setData((prevData) => prevData.filter((client) => client.client_id !== clientId));
-            setRefreshFindAll(!refreshFindAll)
-          })
-          .catch((error) => console.error('Error deleting client:', error));
-      };
-    const columns: ColumnDef<Client>[] = [
-        {
-          id: "select",
-          header: ({ table }) => (
-            <Checkbox
-              checked={
-                table.getIsAllPageRowsSelected() ||
-                (table.getIsSomePageRowsSelected() && "indeterminate")
-              }
-              onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-              aria-label="Select all"
-            />
-          ),
-          cell: ({ row }) => (
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
-            />
-          ),
-          enableSorting: false,
-          enableHiding: false,
-        },
-        {
-          accessorKey: "nom",
-          header: "Nom",
-          cell: ({ row }) => (
-            <div className="capitalize">{row.getValue("nom")}</div>
-          ),
-        },
-        {
-          accessorKey: "mail",
-          header: ({ column }) => {
-            return (
-              <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-              >
-                Email
-                <CaretSortIcon className="ml-2 h-4 w-4" />
+  const onDeleteCommande = (commandId: number) => {
+    axiosInstance.delete(`/api/commande/deletecommande/${commandId}`)
+      .then(() => {
+        setData((prevData) => prevData.filter((command) => command.commandId !== commandId));
+        setRefreshFindAll(!refreshFindAll)
+      })
+      .catch((error) => console.error('Error deleting client:', error));
+  };
+  const columns: ColumnDef<Command>[] = [
+    {
+      id: "select",
+      header: ({ table }) => (
+        <Checkbox
+          checked={
+            table.getIsAllPageRowsSelected() ||
+            (table.getIsSomePageRowsSelected() && "indeterminate")
+          }
+          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+          aria-label="Select all"
+        />
+      ),
+      cell: ({ row }) => (
+        <Checkbox
+          checked={row.getIsSelected()}
+          onCheckedChange={(value) => row.toggleSelected(!!value)}
+          aria-label="Select row"
+        />
+      ),
+      enableSorting: false,
+      enableHiding: false,
+    },
+    {
+      accessorKey: "commandId",
+      header: "Command ID",
+      cell: ({ row }) => <div>{row.getValue("commandId")}</div>,
+    },
+    {
+      accessorKey: "dateCommande",
+      header: "Date de Commande",
+      cell: ({ row }) => <div>{row.getValue("dateCommande")}</div>,
+    },
+    {
+      accessorKey: "montant",
+      header: "Montant",
+      cell: ({ row }) => <div>{row.getValue("montant")}</div>,
+    },
+    {
+      id: "client",
+      header: "Client_id",
+      cell: ({ row }) => {
+        const client = row.original.client;
+        return <div>{client.client_id}</div>;
+      },
+    },
+    {
+      id: "actions",
+      enableHiding: false,
+      cell: ({ row }) => {
+        const command = row.original;
+        const handleDeleteCommande = () => {
+          onDeleteCommande(command.commandId);
+        };
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Open menu</span>
+                <DotsHorizontalIcon className="h-4 w-4" />
               </Button>
-            )
-          },
-          cell: ({ row }) => <div className="lowercase">{row.getValue("mail")}</div>,
-        },
-        {
-          accessorKey: "adress",
-          header: "Address",
-          cell: ({ row }) => <div className="capitalize">{row.getValue("adress")}</div>,
-        },
-        {
-          id: "actions",
-          enableHiding: false,
-          cell: ({ row }) => {
-            const client = row.original
-            const handleDeleteClient = () => {
-                onDeleteClient(client.client_id);
-              };
-            return (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-8 w-8 p-0">
-                    <span className="sr-only">Open menu</span>
-                    <DotsHorizontalIcon className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                  <DropdownMenuItem
-                    // onClick={() => navigator.clipboard.writeText(client.client_id.toString())}
-                    onClick={handleDeleteClient}
-                  >
-                   delete Client
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={()=>{setModifyState('update') ; setOpen(true) ; setUpdatedClient(client!)}}>update client</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )
-          },
-        },
-      ]
-const [refreshFindAll , setRefreshFindAll] = React.useState<boolean>(false)
-React.useEffect(() => {
-  axiosInstance.get('/api/client/findAll')
-    .then((response) => setData(response.data))
-    .catch((error) => console.error('Error fetching clients:', error));
-}, [refreshFindAll]);
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={handleDeleteCommande}>Delete Commande</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+              // onClick={()=>{setModifyState('update') ; setOpen(true) ; setUpdatedCommand(command!)}}
+
+              >Update Commande</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
+    },
+  ];
+
+  const [refreshFindAll, setRefreshFindAll] = React.useState<boolean>(false)
+  React.useEffect(() => {
+    axiosInstance.get('/api/commande/commandes')
+      .then((response) => setData(response.data))
+      .catch((error) => console.error('Error fetching commands:', error));
+  }, [refreshFindAll]);
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
     []
@@ -213,148 +185,188 @@ React.useEffect(() => {
       rowSelection,
     },
   })
-  interface NewClient {
-    nom: string;
-    mail: string;
-    adress: string;
+  interface NewCommand {
+    dateCommande: Date; // Assuming you will convert the Date to a string for serialization
+    montant: number;
+    client: {
+      client_id : number;
+    }; // Assuming Command is another interface representing the Command entity
   }
-  const [newClient, setNewClient] = React.useState<NewClient>({
-    nom: "",
-    mail: "",
-    adress: ""
+  const [newCommand, setNewCommand] = React.useState<NewCommand>({
+    dateCommande: new Date(),
+    montant: 0,
+    client: {
+      client_id: 0
+    }
   });
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (e) => {
     const { id, value } = e.target;
-    setNewClient((prevClient) => ({
-      ...prevClient,
+    setNewCommand((prev) => ({
+      ...prev,
       [id]: value
     }));
   };
-  
-  const handleAddClient = (e: React.FormEvent<HTMLFormElement>) => {
+
+
+  const handleAddCommand = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     // Handle form submission (e.g., send new client data to server)
-    axiosInstance.post(`/api/client/add`,newClient)
-          .then(() => {
-            setRefreshFindAll(!refreshFindAll)
-          })
-          .catch((error) => console.error('Error adding user:', error));
-    setNewClient({
-      nom: "",
-      mail: "",
-      adress: ""
+    newCommand.dateCommande = date!
+    axiosInstance.post(`/api/commande/add`, newCommand)
+      .then(() => {
+        setRefreshFindAll(!refreshFindAll)
+      })
+      .catch((error) => console.error('Error adding command:', error));
+    setNewCommand({
+      dateCommande: new Date(),
+      montant: 0,
+      client: {
+        client_id: 0
+      }
     });
     setOpen(false)
   };
 
-  const handleUpdatedClientChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { id, value } = e.target;
-    setUpdatedClient((prevClient: Client | undefined) => ({
-      ...(prevClient || {}), // Ensure prevClient is not undefined
-      [id]: value
-    }));
-  };
-  const handleUpdateClient = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    // Handle form submission (e.g., send new client data to server)
-    axiosInstance.post(`/api/client/update/${updatedClient?.client_id}`,updatedClient)
-          .then(() => {
-            setRefreshFindAll(!refreshFindAll)
-          })
-          .catch((error) => console.error('Error updating user:', error));
-    setUpdatedClient(updatedClient);
-    setOpen(false)
-  };
-  
-  const [open , setOpen] = React.useState(false);
-  const [modifyState , setModifyState] = React.useState('add');
-  const [updatedClient , setUpdatedClient] = React.useState<Client>();
+  // const handleUpdatedCommandChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const { id, value } = e.target;
+  //   setUpdatedCommand((prevClient: Command | undefined) => ({
+  //     ...(prevClient || {}), // Ensure prevClient is not undefined
+  //     [id]: value
+  //   }));
+  // };
+  // const handleUpdateCommand = (e: React.FormEvent<HTMLFormElement>) => {
+  //   e.preventDefault();
+  //   // Handle form submission (e.g., send new client data to server)
+  //   axiosInstance.post(`/api/commande/update/${updatedCommand?.commandId}/${updatedCommand?.client.client_id}`,updatedCommand)
+  //         .then(() => {
+  //           setRefreshFindAll(!refreshFindAll)
+  //         })
+  //         .catch((error) => console.error('Error updating command:', error));
+  //   setUpdatedCommand(updatedCommand);
+  //   setOpen(false)
+  // };
+  const [date, setDate] = React.useState<Date>()
+
+  const [open, setOpen] = React.useState(false);
+  const [modifyState, setModifyState] = React.useState('add');
+  // const [updatedCommand , setUpdatedCommand] = React.useState<Command>();
 
   return (
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filter emails..."
-          value={(table.getColumn("mail")?.getFilterValue() as string) ?? ""}
+          placeholder="Filter by commandId..."
+          value={(table.getColumn("commandId")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("mail")?.setFilterValue(event.target.value)
+            table.getColumn("commandId")?.setFilterValue(event.target.value)
           }
           className="max-w-sm"
         />
         <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-      <Button onClick={()=>setModifyState('add')} className="m-4"><PlusCircle className="m-2"/></Button>
-      </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
-       {modifyState == 'add' && <><DialogHeader>
-                          <DialogTitle>add Client</DialogTitle>
-                          <DialogDescription>
-                          add new client here. Click save when you're done.
-                          </DialogDescription>
-                      </DialogHeader><form onSubmit={handleAddClient}>
-                              <div className="grid gap-4 py-4">
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                      <Label htmlFor="nom" className="text-right">
-                                          Name
-                                      </Label>
-                                      <Input id="nom" value={newClient.nom} className="col-span-3" onChange={handleChange} />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                      <Label htmlFor="mail" className="text-right">
-                                          Email
-                                      </Label>
-                                      <Input id="mail" value={newClient.mail} className="col-span-3" onChange={handleChange} />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                      <Label htmlFor="adress" className="text-right">
-                                          Address
-                                      </Label>
-                                      <Input id="adress" value={newClient.adress} className="col-span-3" onChange={handleChange} />
-                                  </div>
-                              </div>
-                              <DialogFooter>
-                                  <Button type="submit">Save changes</Button>
-                              </DialogFooter>
-                          </form></>}
-      {modifyState == 'update' && <><DialogHeader>
-                          <DialogTitle>update Client</DialogTitle>
-                          <DialogDescription>
-                          Make changes to your profile here. Click save when you're done.
-                          </DialogDescription>
-                      </DialogHeader><form onSubmit={handleUpdateClient}>
-                              <div className="grid gap-4 py-4">
-                              <div className="grid grid-cols-4 items-center gap-4">
-                                      <Label htmlFor="nom" className="text-right">
-                                          id
-                                      </Label>
-                                      <Input readOnly id="nom" value={updatedClient?.client_id} className="col-span-3" onChange={handleUpdatedClientChange} />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                      <Label htmlFor="nom" className="text-right">
-                                          Name
-                                      </Label>
-                                      <Input id="nom" value={updatedClient?.nom} className="col-span-3" onChange={handleUpdatedClientChange} />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                      <Label htmlFor="mail" className="text-right">
-                                          Email
-                                      </Label>
-                                      <Input id="mail" value={updatedClient?.mail} className="col-span-3" onChange={handleUpdatedClientChange} />
-                                  </div>
-                                  <div className="grid grid-cols-4 items-center gap-4">
-                                      <Label htmlFor="adress" className="text-right">
-                                          Address
-                                      </Label>
-                                      <Input id="adress" value={updatedClient?.adress} className="col-span-3" onChange={handleUpdatedClientChange} />
-                                  </div>
-                              </div>
-                              <DialogFooter>
-                                  <Button type="submit">Save changes</Button>
-                              </DialogFooter>
-                          </form></>}
-    </DialogContent>
-      </Dialog>
-     
+          <DialogTrigger asChild>
+            <Button onClick={() => setModifyState('add')} className="m-4"><PlusCircle className="m-2" /></Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            {modifyState === 'add' && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>Add Command</DialogTitle>
+                  <DialogDescription>Add new Command here. Click save when you're done.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleAddCommand}>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="dateCommande" className="text-right">
+                        Date de Commande
+                      </Label>
+                      {/* <Input id="dateCommande" value={newCommand.dateCommande} className="col-span-3" onChange={handleChange} /> */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant={"outline"}
+                            className={cn(
+                              "w-[240px] justify-start text-left font-normal",
+                              !date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4" />
+                            {date ? format(date, "PPP") : <span>Pick a date</span>}
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={date}
+                            onSelect={setDate}
+                            onChange={handleChange}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="montant" className="text-right">
+                        Montant
+                      </Label>
+                      <Input id="montant" value={newCommand.montant} className="col-span-3" onChange={handleChange} />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <Label htmlFor="client_id" className="text-right">
+                        Client ID
+                      </Label>
+                      
+                      <Input id="client_id" value={newCommand.client.client_id} className="col-span-3" onChange={handleChange} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="submit">Save changes</Button>
+                  </DialogFooter>
+                </form>
+              </>
+            )}
+            {/* {modifyState === 'update' && (
+    <>
+      <DialogHeader>
+        <DialogTitle>Update Command</DialogTitle>
+        <DialogDescription>Make changes to your Command here. Click save when you're done.</DialogDescription>
+      </DialogHeader>
+      <form onSubmit={handleUpdateCommand}>
+        <div className="grid gap-4 py-4">
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="commandId" className="text-right">
+              Command ID
+            </Label>
+            <Input readOnly id="commandId" value={updatedCommand?.commandId} className="col-span-3" onChange={handleUpdatedCommandChange} />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="dateCommande" className="text-right">
+              Date de Commande
+            </Label>
+            <Input id="dateCommande" value={updatedCommand?.dateCommande} className="col-span-3" onChange={handleUpdatedCommandChange} />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="montant" className="text-right">
+              Montant
+            </Label>
+            <Input id="montant" value={updatedCommand?.montant} className="col-span-3" onChange={handleUpdatedCommandChange} />
+          </div>
+          <div className="grid grid-cols-4 items-center gap-4">
+            <Label htmlFor="client_id" className="text-right">
+              Client ID
+            </Label>
+            <Input id="client_id" value={updatedCommand?.client_id} className="col-span-3" onChange={handleUpdatedCommandChange} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button type="submit">Save changes</Button>
+        </DialogFooter>
+      </form>
+    </>
+  )} */}
+          </DialogContent>
+
+        </Dialog>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -393,9 +405,9 @@ React.useEffect(() => {
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   )
                 })}

@@ -52,7 +52,7 @@ import { axiosInstance } from "./axios"
 import { PlusCircle } from "lucide-react"
 import { Dialog, DialogTrigger } from "./components/ui/dialog"
 
-interface Client {
+export interface Client {
     client_id: number;
     nom: string;
     mail: string;

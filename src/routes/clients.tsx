@@ -1,4 +1,4 @@
-import { DataTableDemo } from "@/test";
+import { DataTableDemo } from "@/clientsComponent";
 
 function Clients() {
     return (
